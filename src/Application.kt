@@ -51,6 +51,7 @@ fun Application.module(testing: Boolean = false) {
     install(BackgroundJob.BackgroundJobFeature) {
         name = "Kafka-Producer-Job"
         job = buildConsumer<Long, String>(environment)
+        startOnSeparateThread = true
     }
 }
 
