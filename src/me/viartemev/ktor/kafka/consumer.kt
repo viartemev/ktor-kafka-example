@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private val logger = KotlinLogging.logger {}
 
-class Consumer<K, V>(private val consumer: KafkaConsumer<K, V>, private val topic: String) : ClosableJob {
+class Consumer<K, V>(private val consumer: KafkaConsumer<K, V>, topic: String) : ClosableJob {
     private val closed: AtomicBoolean = AtomicBoolean(false)
     private var finished = CountDownLatch(1)
 
@@ -42,27 +42,27 @@ class Consumer<K, V>(private val consumer: KafkaConsumer<K, V>, private val topi
                     }
                 }
             }
-            logger.info { "I'm done" }
+            logger.info { "Finish consuming" }
         } catch (e: Throwable) {
             when (e) {
                 is WakeupException -> logger.info { "Consumer waked up" }
                 else -> logger.error(e) { "Polling failed" }
             }
         } finally {
-            logger.info { "Commit sync in finally" }
+            logger.info { "Commit offset synchronously" }
             consumer.commitSync()
             consumer.close()
             finished.countDown()
-            logger.info { "Finally finished" }
+            logger.info { "Consumer successfully closed" }
         }
     }
 
     override fun close() {
-        logger.info { "Starting closable section" }
+        logger.info { "Close job..." }
         closed.set(true)
         consumer.wakeup()
         finished.await(3000, TimeUnit.MILLISECONDS)
-        logger.info { "Job is closed" }
+        logger.info { "Job is successfully closed" }
     }
 }
 

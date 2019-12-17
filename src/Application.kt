@@ -3,13 +3,9 @@ package me.viartemev.ktor
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.application.Application
-import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
-import io.ktor.features.StatusPages
-import io.ktor.http.HttpStatusCode
 import io.ktor.jackson.jackson
-import io.ktor.response.respond
 import io.ktor.routing.Routing
 import io.ktor.server.engine.ShutDownUrl
 import io.ktor.util.KtorExperimentalAPI
@@ -42,19 +38,10 @@ fun Application.module(testing: Boolean = false) {
     val eventProducer = buildProducer<Long, Event>(environment)
     val eventService = EventService(eventProducer)
     install(Routing) {
-        install(StatusPages) {
-            exception<AuthenticationException> { _ -> call.respond(HttpStatusCode.Unauthorized) }
-            exception<AuthorizationException> { _ -> call.respond(HttpStatusCode.Forbidden) }
-        }
         events(eventService)
     }
     install(BackgroundJob.BackgroundJobFeature) {
         name = "Kafka-Producer-Job"
         job = buildConsumer<Long, String>(environment)
-        startOnSeparateThread = true
     }
 }
-
-class AuthenticationException : RuntimeException()
-class AuthorizationException : RuntimeException()
-

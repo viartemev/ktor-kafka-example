@@ -4,7 +4,6 @@ import io.ktor.application.Application
 import io.ktor.application.ApplicationFeature
 import io.ktor.util.AttributeKey
 import io.ktor.util.KtorExperimentalAPI
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.io.Closeable
 import kotlin.concurrent.thread
@@ -19,7 +18,6 @@ class BackgroundJob(configuration: JobConfiguration) : Closeable {
     class JobConfiguration {
         var name: String? = null
         var job: ClosableJob? = null
-        var startOnSeparateThread = false
     }
 
     object BackgroundJobFeature : ApplicationFeature<Application, JobConfiguration, BackgroundJob> {
@@ -28,11 +26,7 @@ class BackgroundJob(configuration: JobConfiguration) : Closeable {
         override fun install(pipeline: Application, configure: JobConfiguration.() -> Unit): BackgroundJob {
             val configuration = JobConfiguration().apply(configure)
             val backgroundJob = BackgroundJob(configuration)
-            if (configuration.startOnSeparateThread) {
-                configuration.job?.let { thread(name = configuration.name) { it.run() } }
-            } else {
-                pipeline.launch { backgroundJob.job?.run() }
-            }
+            configuration.job?.let { thread(name = configuration.name) { it.run() } }
             return backgroundJob
         }
     }
